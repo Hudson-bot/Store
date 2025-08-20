@@ -39,10 +39,31 @@ export default function SignIn() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       const data = await res.json();
+
       if (res.ok) {
         alert(data.message);
-        navigate("/dashboard"); // Redirect after login
+
+        localStorage.setItem('token', data.token);
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          firstLogin: data.firstLogin
+        }));
+
+        // Check if user is a store administrator and first login
+        if (data.role === "Store Owner" && data.firstLogin === 1) {
+          // Redirect to store dashboard which will show the popup
+          navigate("/store-dashboard");
+        } else {
+          // Normal redirect for existing users
+          navigate("/store-dashboard");
+        }
+
       } else {
         alert(data.error);
       }
@@ -118,3 +139,4 @@ export default function SignIn() {
     </div>
   );
 }
+  

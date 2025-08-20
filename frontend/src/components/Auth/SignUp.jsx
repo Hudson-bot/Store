@@ -178,9 +178,9 @@ export default function SignUp() {
               required
             >
               <option value="">Select Role</option>
-              <option value="store-admin">Store Administrator</option>
-              <option value="customer">Customer</option>
-              <option value="store-owner">Store Owner</option>
+              <option value="Store Administrator">Store Administrator</option>
+              <option value="Customer">Customer</option>
+              <option value="Store Owner">Store Owner</option>
             </select>
           </div>
           <button

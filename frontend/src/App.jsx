@@ -1,6 +1,7 @@
 import './App.css'
+import StoreDashboard from './components/Admin/StoreDashboard'
 import SignIn from './components/Auth/SignIn'
-import Signup from './components/Auth/SignUp'
+import SignUp from './components/Auth/SignUp'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 function App() {
@@ -9,7 +10,10 @@ function App() {
       <Routes>
         <Route path="/" element={<SignIn />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/store-dashboard" element={<StoreDashboard/>} />
+        {/* <Route path="/customer-dashboard" element={<CustomerDashboard/>} /> */}
+        {/* Add other routes as needed */}
       </Routes>
     </Router>
   )
