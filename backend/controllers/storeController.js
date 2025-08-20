@@ -40,3 +40,17 @@ exports.getStoreInfo = (req, res) => {
     return res.status(200).json(result[0]);
   });
 };
+
+//Get all stores
+exports.getAllStores = (req, res) => {
+  const query = `SELECT * FROM store_admin_info`;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ message: "Error fetching all stores", error: err });
+    }
+
+    return res.status(200).json(result);
+  });
+};

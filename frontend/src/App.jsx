@@ -3,6 +3,7 @@ import StoreDashboard from './components/Admin/StoreDashboard'
 import SignIn from './components/Auth/SignIn'
 import SignUp from './components/Auth/SignUp'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import CustomerDashboard from './components/Customer/CustomerDashboard'
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/store-dashboard" element={<StoreDashboard/>} />
-        {/* <Route path="/customer-dashboard" element={<CustomerDashboard/>} /> */}
+        <Route path="/customer-dashboard" element={<CustomerDashboard/>} />
         {/* Add other routes as needed */}
       </Routes>
     </Router>

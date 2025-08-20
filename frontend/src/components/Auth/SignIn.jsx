@@ -59,9 +59,12 @@ export default function SignIn() {
         if (data.role === "Store Owner" && data.firstLogin === 1) {
           // Redirect to store dashboard which will show the popup
           navigate("/store-dashboard");
-        } else {
+        } else if (data.role === "Customer") {
           // Normal redirect for existing users
-          navigate("/store-dashboard");
+          navigate("/customer-dashboard");
+        }else{
+          // Redirect to admin dashboard for other roles
+          navigate("/admin-dashboard");
         }
 
       } else {
