@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SignIn() {
+  const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -56,15 +57,28 @@ export default function SignIn() {
         }));
 
         // Check if user is a store administrator and first login
-        if (data.role === "Store Owner" && data.firstLogin === 1) {
+        // if (data.role === "Store Owner" && data.firstLogin === 1) {
+        //   // Redirect to store dashboard which will show the popup
+        //   navigate("/store-dashboard");
+        // }
+         if (data.role === "Store Owner") {
+          if (data.firstLogin === 1) {
+            // Redirect to store dashboard which will show the popup
+          setShowPopup(true);
+          }
           // Redirect to store dashboard which will show the popup
           navigate("/store-dashboard");
-        } else if (data.role === "Customer") {
+        }  
+        else if (data.role === "Customer") {
           // Normal redirect for existing users
           navigate("/customer-dashboard");
-        }else{
-          // Redirect to admin dashboard for other roles
+        }else if (data.role === "Store Administrator") {
+          // Normal redirect for existing users
           navigate("/admin-dashboard");
+        }
+        else{
+          // Redirect to admin dashboard for other roles
+          // navigate("/admin-dashboard");
         }
 
       } else {

@@ -5,6 +5,7 @@ import SignUp from './components/Auth/SignUp'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import CustomerDashboard from './components/Customer/CustomerDashboard'
 
+
 function App() {
   return (
     <Router>

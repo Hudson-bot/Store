@@ -7,13 +7,13 @@ import { useNavigate } from "react-router-dom";
 const StoreDashboard = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [storeInfo, setStoreInfo] = useState(null);
+  const [reviews, setReviews] = useState([]); 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkFirstLoginAndLoadStoreInfo = async () => {
       try {
-
         const userData = JSON.parse(localStorage.getItem('user'));
         const token = localStorage.getItem('token');
         
@@ -23,32 +23,28 @@ const StoreDashboard = () => {
           return;
         }
 
-        // Checking
         if (userData.role !== "Store Owner") {
           alert("Access denied. Only Store Owners can access this dashboard.");
           navigate("/signin");
           return;
         }
 
-        // Check if this is the first login
+        // Popup check
         if (userData.firstLogin === 1) {
-          console.log("First time user detected, showing popup");
           setShowPopup(true);
-        } else {
-          console.log("Existing user detected, popup hidden");
-          setShowPopup(false);
         }
 
+        // Load store info
         try {
           const response = await axios.get("http://localhost:5000/api/store/store-info", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
+            headers: { Authorization: `Bearer ${token}` }
           });
 
           if (response.data && !response.data.message) {
             setStoreInfo(response.data);
             setShowPopup(false);
+
+            // Update user in localStorage
             const updatedUser = { ...userData, firstLogin: 0 };
             localStorage.setItem('user', JSON.stringify(updatedUser));
           }
@@ -57,6 +53,17 @@ const StoreDashboard = () => {
             console.error("Error loading store info:", error);
           }
         }
+
+        // Load store reviews
+        try {
+          const res = await axios.get("http://localhost:5000/api/review/owner/reviews", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setReviews(res.data);
+        } catch (error) {
+          console.error("Error loading reviews:", error);
+        }
+
       } catch (error) {
         console.error("Error in useEffect:", error);
         navigate("/signin");
@@ -77,11 +84,8 @@ const StoreDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get("http://localhost:5000/api/store/store-info", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       if (response.data && !response.data.message) {
         setStoreInfo(response.data);
         setShowPopup(false);
@@ -108,7 +112,7 @@ const StoreDashboard = () => {
   return (
     <div className="flex h-screen bg-white">
       {showPopup && <PopUp onClose={handlePopupClose} />}
-      
+
       {/* Left Sidebar */}
       <div className="w-1/4 bg-gray-100 p-6 border-r border-gray-300">
         <div className="flex justify-between items-center mb-6">
@@ -156,10 +160,11 @@ const StoreDashboard = () => {
         )}
       </div>
 
-      {/* Right Side  */}
-      <div className="flex-1 p-8 bg-white">
+      {/* Right Side */}
+      <div className="flex-1 p-8 bg-white overflow-y-auto">
         <div className="max-w-4xl mx-auto">
 
+          {/* Store Overview */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-black mb-2">
               {storeInfo ? `Welcome, ${storeInfo.name}` : 'Store Dashboard'}
@@ -172,42 +177,29 @@ const StoreDashboard = () => {
             </p>
           </div>
 
-          <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-center">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-black mb-2">Store Overview</h2>
-                <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
-              </div>
-              
-              {storeInfo ? (
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">Owner Name</p>
-                    <p className="text-2xl font-bold text-black">{storeInfo.name}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">Store Name</p>
-                    <p className="text-2xl font-bold text-black">{storeInfo.store_name}</p>
-                  </div>
-                  
-                  
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🏪</div>
-                  <h3 className="text-xl font-semibold text-black mb-2">Store Setup Required</h3>
-                  <p className="text-gray-600 mb-6">Complete your store information to unlock the dashboard</p>
-                  <button
-                    onClick={() => setShowPopup(true)}
-                    className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    Start Setup
-                  </button>
-                </div>
-              )}
-            </div>
+          {/* Reviews Section */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mt-6">
+            <h2 className="text-2xl font-semibold text-black mb-4">Customer Reviews</h2>
+            {reviews.length === 0 ? (
+              <p className="text-gray-500">No reviews yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {reviews.map((rev) => (
+                  <li key={rev.id} className="p-4 border rounded-lg bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <strong className="text-black">{rev.customer_name}</strong>
+                      <span className="text-yellow-500 font-bold">⭐ {rev.rating}</span>
+                    </div>
+                    <p className="text-gray-700 mt-2">{rev.comment}</p>
+                    <small className="text-gray-500">
+                      {new Date(rev.created_at).toLocaleString()}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+
         </div>
       </div>
     </div>

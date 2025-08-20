@@ -1,4 +1,3 @@
-// CustomerDashboard.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -7,56 +6,61 @@ const CustomerDashboard = () => {
   const [customerInfo, setCustomerInfo] = useState(null);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [ratings, setRatings] = useState({});
-  const [hoverRatings, setHoverRatings] = useState({});
+  const [selectedStore, setSelectedStore] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [userReviews, setUserReviews] = useState({});
   const navigate = useNavigate();
 
-  const StarRatingInput = ({ storeId }) => {
-    const rating = ratings[storeId] || 0;
-    const hover = hoverRatings[storeId] || 0;
+  // Star rating display component
+  const StarRatingDisplay = ({ rating }) => {
+    const safeRating = Number(rating);
+    const ratingValue = Number.isFinite(safeRating) ? safeRating : 0;
+    const full = Math.floor(ratingValue);
+    const hasHalf = ratingValue - full >= 0.5;
+    return (
+      <div className="flex items-center">
+        {[...Array(5)].map((_, index) => (
+          <span key={index} className="text-xl">
+            {index < full ? (
+              <span className="text-yellow-400">★</span>
+            ) : index === full && hasHalf ? (
+              <span className="text-yellow-400">★</span>
+            ) : (
+              <span className="text-gray-300">★</span>
+            )}
+          </span>
+        ))}
+        <span className="ml-2 text-gray-600 text-sm">({ratingValue.toFixed(1)})</span>
+      </div>
+    );
+  };
 
-    const handleClick = async (value) => {
-      setRatings((prev) => ({ ...prev, [storeId]: value }));
-      try {
-        const token = localStorage.getItem("token");
-        await axios.post(
-          "http://localhost:5000/api/reviews",
-          { storeId, rating: value },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (error) {
-        console.error("Error submitting review:", error);
-      }
-    };
-
+  // Interactive star rating component for reviews
+  const StarRatingInput = ({ rating, setRating, hoverRating, setHoverRating }) => {
     return (
       <div className="flex items-center space-x-1">
-        {[...Array(5)].map((_, index) => {
-          const value = index + 1;
-          return (
-            <button
-              key={index}
-              type="button"
-              className="text-2xl focus:outline-none"
-              onClick={() => handleClick(value)}
-              onMouseEnter={() =>
-                setHoverRatings((prev) => ({ ...prev, [storeId]: value }))
-              }
-              onMouseLeave={() =>
-                setHoverRatings((prev) => ({ ...prev, [storeId]: 0 }))
-              }
-            >
-              <span
-                className={
-                  value <= (hover || rating) ? "text-yellow-400" : "text-gray-300"
-                }
-              >
-                ★
-              </span>
-            </button>
-          );
-        })}
-        <span className="ml-2 text-gray-600 text-sm">{rating || 0}/5</span>
+        {[...Array(5)].map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            className="text-2xl focus:outline-none"
+            onClick={() => setRating(index + 1)}
+            onMouseEnter={() => setHoverRating(index + 1)}
+            onMouseLeave={() => setHoverRating(0)}
+          >
+            {index < (hoverRating || rating) ? (
+              <span className="text-yellow-400">★</span>
+            ) : (
+              <span className="text-gray-300">★</span>
+            )}
+          </button>
+        ))}
+        <span className="ml-2 text-gray-600 text-sm">
+          {hoverRating || rating || 0}/5
+        </span>
       </div>
     );
   };
@@ -64,9 +68,9 @@ const CustomerDashboard = () => {
   useEffect(() => {
     const fetchCustomerData = async () => {
       try {
-        const userData = JSON.parse(localStorage.getItem("user"));
-        const token = localStorage.getItem("token");
-
+        const userData = JSON.parse(localStorage.getItem('user'));
+        const token = localStorage.getItem('token');
+        
         if (!userData || !token) {
           navigate("/signin");
           return;
@@ -79,13 +83,9 @@ const CustomerDashboard = () => {
         }
 
         setCustomerInfo(userData);
-        const response = await axios.get("http://localhost:5000/api/store/all-stores", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setStores(response.data); 
+        await fetchStores(token, userData.id);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error in useEffect:", error);
         navigate("/signin");
       } finally {
         setLoading(false);
@@ -95,10 +95,87 @@ const CustomerDashboard = () => {
     fetchCustomerData();
   }, [navigate]);
 
+  const fetchStores = async (token, customerId) => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/store/all-stores", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const storesWithReviews = await Promise.all(
+        response.data.map(async (store) => {
+          try {
+            // Fetch user's review for this store
+            const reviewResponse = await axios.get(
+              `http://localhost:5000/api/review/stores/${store.id}/user-review`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            return {
+              ...store,
+              userReview: reviewResponse.data
+            };
+          } catch (error) {
+            // No review exists for this store
+            return {
+              ...store,
+              userReview: null
+            };
+          }
+        })
+      );
+      
+      setStores(storesWithReviews);
+    } catch (error) {
+      console.error("Error loading stores:", error);
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate("/signin");
+  };
+
+  const openReviewModal = (store) => {
+    setSelectedStore(store);
+    // Pre-fill with existing review if available
+    setReviewText(store.userReview?.comment || "");
+    setReviewRating(store.userReview?.rating || 0);
+    setShowReviewModal(true);
+  };
+
+  const submitReview = async () => {
+    if (!reviewRating) {
+      alert("Please select a rating");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.post(
+        "http://localhost:5000/api/review/reviews",
+        {
+          storeId: selectedStore.id,
+          rating: reviewRating,
+          comment: reviewText
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Refresh stores data to get updated ratings
+      const userData = JSON.parse(localStorage.getItem('user'));
+      await fetchStores(token, userData.id);
+      
+      setShowReviewModal(false);
+      alert(selectedStore.userReview ? "Review updated successfully!" : "Review submitted successfully!");
+      
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alert("Failed to submit review");
+    }
   };
 
   if (loading) {
@@ -111,36 +188,152 @@ const CustomerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Customer Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700"
-          >
-            Logout
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Customer Dashboard</h1>
+              {customerInfo && (
+                <p className="text-gray-600">Hello, {customerInfo.name}</p>
+              )}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
-          Welcome {customerInfo?.name}, rate the stores below:
-        </h2>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            Welcome back{customerInfo ? `, ${customerInfo.name}` : ''}!
+          </h2>
+          <p className="text-gray-600">
+            Discover amazing stores and share your experiences with others.
+          </p>
+        </div>
 
-        <div className="space-y-6">
-          {stores.map((store) => (
-            <div key={store.id} className="bg-white p-4 rounded-md shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {store.store_name}
-              </h3>
-              <p className="text-gray-600 mb-2">{store.store_type}</p>
-              <p className="text-gray-600 mb-2">{store.address}</p>
-              <StarRatingInput storeId={store.id} />
-            </div>
-          ))}
+        {/* Stores Section */}
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Featured Stores</h2>
+            <span className="text-gray-500 text-sm">
+              {stores.length} stores available
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stores.map((store, idx) => (
+              <div key={`${store.id}-${idx}`} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{store.name}</h3>
+                      <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full mt-1 capitalize">
+                        {store.type}
+                      </span>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold text-lg">
+                        {store.type === 'grocery' ? '🛒' : 
+                         store.type === 'electronics' ? '📱' : '👕'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <StarRatingDisplay rating={store.rating} />
+                  
+                  <div className="mt-2 text-sm text-gray-600">
+                    {store.review_count || 0} reviews
+                    {store.userReview && (
+                      <span className="ml-2 text-green-600">• You reviewed this store</span>
+                    )}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                    <button 
+                      onClick={() => openReviewModal(store)}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-md text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      {store.userReview ? 'Update Review' : 'Write a Review'}
+                    </button>
+                    <button className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm hover:bg-gray-50 transition-colors">
+                      Visit Store
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4">
+              {selectedStore.userReview ? 'Update Your Review' : 'Review'} {selectedStore.name}
+            </h2>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Rating
+              </label>
+              <StarRatingInput 
+                rating={reviewRating}
+                setRating={setReviewRating}
+                hoverRating={hoverRating}
+                setHoverRating={setHoverRating}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Review (Optional)
+              </label>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Share your experience with this store..."
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows="4"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReview}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {selectedStore.userReview ? 'Update Review' : 'Submit Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <p className="text-center text-gray-500 text-sm">
+            © 2024 Store Manager. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

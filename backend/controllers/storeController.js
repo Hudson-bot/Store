@@ -43,14 +43,23 @@ exports.getStoreInfo = (req, res) => {
 
 //Get all stores
 exports.getAllStores = (req, res) => {
-  const query = `SELECT * FROM store_admin_info`;
+  const query = `
+    SELECT 
+      user_id AS id,
+      store_name AS name,
+      store_type AS type,
+      COALESCE(rating, 0) AS rating,
+      COALESCE(review_count, 0) AS review_count
+    FROM store_admin_info 
+    ORDER BY rating DESC, review_count DESC
+  `;
 
-  db.query(query, (err, result) => {
+  db.query(query, (err, results) => {
     if (err) {
       console.error("Database error:", err);
-      return res.status(500).json({ message: "Error fetching all stores", error: err });
+      return res.status(500).json({ message: "Error fetching stores", error: err });
     }
-
-    return res.status(200).json(result);
+    
+    return res.status(200).json(results);
   });
 };
