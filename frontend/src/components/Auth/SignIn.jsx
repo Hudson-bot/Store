@@ -77,8 +77,7 @@ export default function SignIn() {
           navigate("/admin-dashboard");
         }
         else{
-          // Redirect to admin dashboard for other roles
-          // navigate("/admin-dashboard");
+          navigate("/admin-dashboard");
         }
 
       } else {
