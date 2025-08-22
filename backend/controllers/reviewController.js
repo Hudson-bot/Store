@@ -1,6 +1,5 @@
 const db = require("../config/db");
 
-// Submit
 exports.submitReview = (req, res) => {
   const { storeId, rating, comment } = req.body;
   const customerId = req.user.id;
@@ -52,7 +51,6 @@ exports.submitReview = (req, res) => {
   });
 };
 
-// Get reviews for a store
 exports.getStoreReviews = (req, res) => {
   const { storeId } = req.params;
 
@@ -72,7 +70,6 @@ exports.getStoreReviews = (req, res) => {
   });
 };
 
-// Get user's review for a specific store
 exports.getUserReview = (req, res) => {
   const { storeId } = req.params;
   const customerId = req.user.id;
@@ -96,7 +93,6 @@ exports.getUserReview = (req, res) => {
   });
 };
 
-// Update store average rating and review count
 const updateStoreRating = (storeId) => {
   const query = `
     UPDATE store_admin_info 
@@ -121,9 +117,9 @@ const updateStoreRating = (storeId) => {
   });
 };
 
-//for each store reviews
+
 exports.getOwnerStoreReviews = (req, res) => {
-  const ownerId = req.user.id; // store owner ID from JWT
+  const ownerId = req.user.id; 
 
   const query = `
     SELECT r.id, r.customer_name, r.rating, r.comment, r.created_at 

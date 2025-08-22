@@ -4,17 +4,15 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Signup
+
 exports.signup = async (req, res) => {
   const { name, email, address, password, role } = req.body;
   
-  // Validate required fields
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required' });
   }
 
   try {
-    // Check if user already exists
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, result) => {
       if (err) {
         console.error('Database error:', err);
@@ -25,7 +23,7 @@ exports.signup = async (req, res) => {
         return res.status(400).json({ error: 'Email already exists' });
       }
 
-      // Hash password
+      // Hashing
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Insert user with firstLogin set to 1 (true)
@@ -73,8 +71,7 @@ exports.signup = async (req, res) => {
 // Signin
 exports.signin = async (req, res) => {
   const { email, password } = req.body;
-  
-  // Validate input
+
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -97,7 +94,6 @@ exports.signin = async (req, res) => {
         return res.status(400).json({ error: 'Invalid password' });
       }
 
-      // Create JWT
       const token = jwt.sign(
         { 
           id: user.id, 
@@ -143,7 +139,6 @@ exports.updatePassword = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Get current password from database
     const query = "SELECT password FROM users WHERE id = ?";
     db.query(query, [userId], async (err, results) => {
       if (err) {
@@ -156,18 +151,14 @@ exports.updatePassword = async (req, res) => {
       }
 
       const user = results[0];
-
-      // Verify current password
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
 
-      // Hash new password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      // Update password in database
       const updateQuery = "UPDATE users SET password = ? WHERE id = ?";
       db.query(updateQuery, [hashedPassword, userId], (updateErr) => {
         if (updateErr) {

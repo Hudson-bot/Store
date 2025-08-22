@@ -26,7 +26,6 @@ exports.getAdminDashboardStats = (req, res) => {
   });
 };
 
-// Get all users
 exports.getAllUsers = (req, res) => {
   const query = "SELECT id, name, email, address, role FROM users";
   
@@ -37,9 +36,7 @@ exports.getAllUsers = (req, res) => {
   });
 };
 
-// Get all stores from store_admin_info table
-// Get all stores from store_admin_info table with required details
-// Get all stores from store_admin_info table with required details
+
 exports.getAllStores = (req, res) => {
   const query = `
     SELECT 

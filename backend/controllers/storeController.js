@@ -1,9 +1,9 @@
 const db = require("../config/db");
 
-// Save store admin info
+
 exports.saveStoreInfo = (req, res) => {
   const { name, storeName, address, phone, storeType } = req.body;
-  const userId = req.user.id; // comes from JWT after login
+  const userId = req.user.id; 
 
   const query = `
     INSERT INTO store_admin_info (user_id, name, store_name, address, phone, store_type)
@@ -19,7 +19,7 @@ exports.saveStoreInfo = (req, res) => {
   });
 };
 
-// Get store admin info
+
 exports.getStoreInfo = (req, res) => {
   const userId = req.user.id;
 
@@ -41,7 +41,7 @@ exports.getStoreInfo = (req, res) => {
   });
 };
 
-//Get all stores
+
 exports.getAllStores = (req, res) => {
   const query = `
     SELECT 
