@@ -37,18 +37,42 @@ exports.getAllUsers = (req, res) => {
   });
 };
 
-// Get all stores
+// Get all stores from store_admin_info table
+// Get all stores from store_admin_info table with required details
+// Get all stores from store_admin_info table with required details
 exports.getAllStores = (req, res) => {
   const query = `
-    SELECT s.id, s.name, s.email, s.address, AVG(r.rating) as rating
+    SELECT 
+      s.id, 
+      s.name AS owner_name,
+      u.email,
+      s.store_name,
+      s.address, 
+      COALESCE(CAST(AVG(r.rating) AS DECIMAL(10,1)), 0) as average_rating,
+      COUNT(r.id) as total_reviews
     FROM store_admin_info s
-    LEFT JOIN reviews r ON s.id = r.store_id
-    GROUP BY s.id
+    LEFT JOIN users u ON s.user_id = u.id
+    LEFT JOIN reviews r ON s.user_id = r.store_id
+    GROUP BY s.id, s.name, u.email, s.store_name, s.address
+    ORDER BY s.store_name
   `;
   
   db.query(query, (err, results) => {
-    if (err) return res.status(500).json({ message: "Error fetching stores", error: err });
+    if (err) {
+      console.error("Database error in getAllStores:", err);
+      return res.status(500).json({ 
+        message: "Error fetching stores", 
+        error: err.message 
+      });
+    }
     
-    return res.status(200).json(results);
+    // Ensure average_rating is always a number
+    const formattedResults = results.map(store => ({
+      ...store,
+      average_rating: Number(store.average_rating) || 0,
+      total_reviews: Number(store.total_reviews) || 0
+    }));
+    
+    return res.status(200).json(formattedResults);
   });
 };

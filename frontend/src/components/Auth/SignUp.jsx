@@ -21,7 +21,7 @@ export default function SignUp() {
   const validate = () => {
     const newErrors = {};
 
-    if (formData.name.length < 10 || formData.name.length > 60) {
+    if (formData.name.length < 20 || formData.name.length > 60) {
       newErrors.name = "Name must be between 20 and 60 characters.";
     }
 
@@ -43,7 +43,6 @@ export default function SignUp() {
     if (!emailPattern.test(formData.email)) {
       newErrors.email = "Invalid email address.";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,13 +73,12 @@ export default function SignUp() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border-2 border-white">
-        {/* Back Arrow Button */}
         <button
           type="button"
           onClick={() => navigate("/signin")}
           className="mb-4 flex items-center text-black hover:text-blue-600 transition"
         >
-          <span className="mr-2 text-xl">&#8592;</span> {/* Unicode left arrow */}
+          <span className="mr-2 text-xl">&#8592;</span> 
           <span className="font-medium">Back to Sign In</span>
         </button>
         <h2 className="text-2xl font-bold text-center text-black mb-6">
@@ -180,7 +178,6 @@ export default function SignUp() {
               <option value="">Select Role</option>
               <option value="Store Administrator">Store Administrator</option>
               <option value="Customer">Customer</option>
-              <option value="Store Owner">Store Owner</option>
             </select>
           </div>
           <button

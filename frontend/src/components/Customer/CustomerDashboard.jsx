@@ -1,181 +1,32 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+// CustomerDashboard.jsx
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useCustomerDashboard } from "./useCustomerDashboard";
+import { StarRatingDisplay, StarRatingInput } from "./StarRating";
 
 const CustomerDashboard = () => {
-  const [customerInfo, setCustomerInfo] = useState(null);
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStore, setSelectedStore] = useState(null);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
+  const {
+    // State
+    customerInfo,
+    stores,
+    loading,
+    selectedStore,
+    showReviewModal,
+    reviewText,
+    reviewRating,
+    hoverRating,
+    
+    // Actions
+    setReviewText,
+    setReviewRating,
+    setHoverRating,
+    handleLogout,
+    openReviewModal,
+    closeReviewModal,
+    submitReview
+  } = useCustomerDashboard();
+  
   const navigate = useNavigate();
-
-  // Star rating display component
-  const StarRatingDisplay = ({ rating }) => {
-    const safeRating = Number(rating);
-    const ratingValue = Number.isFinite(safeRating) ? safeRating : 0;
-    const full = Math.floor(ratingValue);
-    const hasHalf = ratingValue - full >= 0.5;
-    return (
-      <div className="flex items-center">
-        {[...Array(5)].map((_, index) => (
-          <span key={index} className="text-lg">
-            {index < full ? (
-              <span className="text-gray-800">★</span>
-            ) : index === full && hasHalf ? (
-              <span className="text-gray-800">★</span>
-            ) : (
-              <span className="text-gray-300">★</span>
-            )}
-          </span>
-        ))}
-        <span className="ml-2 text-gray-600 text-sm">({ratingValue.toFixed(1)})</span>
-      </div>
-    );
-  };
-
-  // Interactive star rating component for reviews
-  const StarRatingInput = ({ rating, setRating, hoverRating, setHoverRating }) => {
-    return (
-      <div className="flex items-center space-x-1">
-        {[...Array(5)].map((_, index) => (
-          <button
-            key={index}
-            type="button"
-            className="text-2xl focus:outline-none"
-            onClick={() => setRating(index + 1)}
-            onMouseEnter={() => setHoverRating(index + 1)}
-            onMouseLeave={() => setHoverRating(0)}
-          >
-            {index < (hoverRating || rating) ? (
-              <span className="text-gray-900">★</span>
-            ) : (
-              <span className="text-gray-300">★</span>
-            )}
-          </button>
-        ))}
-        <span className="ml-2 text-gray-600 text-sm">
-          {hoverRating || rating || 0}/5
-        </span>
-      </div>
-    );
-  };
-
-  useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const userData = JSON.parse(localStorage.getItem('user'));
-        const token = localStorage.getItem('token');
-        
-        if (!userData || !token) {
-          navigate("/signin");
-          return;
-        }
-
-        if (userData.role !== "Customer") {
-          alert("Access denied. Only Customers can access this dashboard.");
-          navigate("/signin");
-          return;
-        }
-
-        setCustomerInfo(userData);
-        await fetchStores(token, userData.id);
-      } catch (error) {
-        console.error("Error in useEffect:", error);
-        navigate("/signin");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCustomerData();
-  }, [navigate]);
-
-  const fetchStores = async (token, customerId) => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/store/all-stores", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const storesWithReviews = await Promise.all(
-        response.data.map(async (store) => {
-          try {
-            // Fetch user's review for this store
-            const reviewResponse = await axios.get(
-              `http://localhost:5000/api/review/stores/${store.id}/user-review`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            
-            return {
-              ...store,
-              userReview: reviewResponse.data
-            };
-          } catch (error) {
-            // No review exists for this store
-            return {
-              ...store,
-              userReview: null
-            };
-          }
-        })
-      );
-      
-      setStores(storesWithReviews);
-    } catch (error) {
-      console.error("Error loading stores:", error);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate("/signin");
-  };
-
-  const openReviewModal = (store) => {
-    setSelectedStore(store);
-    // Pre-fill with existing review if available
-    setReviewText(store.userReview?.comment || "");
-    setReviewRating(store.userReview?.rating || 0);
-    setShowReviewModal(true);
-  };
-
-  const submitReview = async () => {
-    if (!reviewRating) {
-      alert("Please select a rating");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      
-      await axios.post(
-        "http://localhost:5000/api/review/reviews",
-        {
-          storeId: selectedStore.id,
-          rating: reviewRating,
-          comment: reviewText
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      // Refresh stores data to get updated ratings
-      const userData = JSON.parse(localStorage.getItem('user'));
-      await fetchStores(token, userData.id);
-      
-      setShowReviewModal(false);
-      alert(selectedStore.userReview ? "Review updated successfully!" : "Review submitted successfully!");
-      
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      alert("Failed to submit review");
-    }
-  };
 
   if (loading) {
     return (
@@ -187,7 +38,6 @@ const CustomerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -198,25 +48,22 @@ const CustomerDashboard = () => {
               )}
             </div>
             <button
-            onClick={() => navigate("/update-password")}
-            className="bg-black text-white px-3 py-2 rounded text-sm hover:bg-gray-800 transition-colors"
-          >
-            Change Password
-          </button>
+              onClick={() => navigate("/update-password")}
+              className="bg-black text-white px-3 py-2 rounded text-sm hover:bg-gray-800 transition-colors"
+            >
+              Change Password
+            </button>
             <button
               onClick={handleLogout}
               className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-800 transition-colors font-medium"
             >
               Logout
             </button>
-            
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
             Welcome back{customerInfo ? `, ${customerInfo.name}` : ''}!
@@ -226,7 +73,6 @@ const CustomerDashboard = () => {
           </p>
         </div>
 
-        {/* Stores Section */}
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Featured Stores</h2>
@@ -326,7 +172,7 @@ const CustomerDashboard = () => {
 
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowReviewModal(false)}
+                onClick={closeReviewModal}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
               >
                 Cancel
@@ -341,15 +187,6 @@ const CustomerDashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-gray-500 text-sm">
-            © 2024 Store Manager. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 };

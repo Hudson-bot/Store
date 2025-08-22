@@ -1,4 +1,3 @@
-// FirstTimePopup.jsx
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +13,7 @@ const PopUp = ({ onClose }) => {
   
   const navigate = useNavigate();
 
-  console.log("PopUp component rendered - showing first-time user setup form");
+  //console.log("PopUp component rendered - showing first-time user setup form");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,7 +23,6 @@ const PopUp = ({ onClose }) => {
     e.preventDefault();
 
     try {
-      // Get the token and user data from localStorage
       const token = localStorage.getItem('token');
       const userData = JSON.parse(localStorage.getItem('user'));
       
@@ -33,8 +31,6 @@ const PopUp = ({ onClose }) => {
         navigate("/signin");
         return;
       }
-
-      // Send data to backend with authorization header
       await axios.post("http://localhost:5000/api/store/store-info", 
         {
           ...formData,
@@ -46,7 +42,7 @@ const PopUp = ({ onClose }) => {
         }
       );
 
-      // After saving store info, update user's firstLogin status
+      // After first tiem login it updates the user's firstLogin status to 0
       await axios.patch("http://localhost:5000/api/auth/setupComplete", 
         { userId: userData.id },
         {
@@ -55,20 +51,16 @@ const PopUp = ({ onClose }) => {
           }
         }
       );
-
-      // Update localStorage user data
       const updatedUser = { ...userData, firstLogin: 0 };
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
-      console.log("Store setup completed successfully, user firstLogin updated to 0");
+      //console.log("Store setup completed successfully, user firstLogin updated to 0");
 
       alert("Store info saved successfully ✅");
       
       if (typeof onClose === 'function') {
-        onClose(); // Close popup if onClose function is provided
+        onClose(); 
       }
-      
-      // Navigate to dashboard (the popup will be hidden)
       navigate("/store-dashboard");
       
     } catch (error) {
@@ -77,7 +69,7 @@ const PopUp = ({ onClose }) => {
         alert("Session expired. Please log in again.");
         navigate("/signin");
       } else {
-        alert("Failed to save store info ❌");
+        alert("Failed to save store info");
       }
     }
   };

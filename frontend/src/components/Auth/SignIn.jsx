@@ -56,24 +56,16 @@ export default function SignIn() {
           firstLogin: data.firstLogin
         }));
 
-        // Check if user is a store administrator and first login
-        // if (data.role === "Store Owner" && data.firstLogin === 1) {
-        //   // Redirect to store dashboard which will show the popup
-        //   navigate("/store-dashboard");
-        // }
+       //logic for if the store owner is logging in for first time
          if (data.role === "Store Owner") {
           if (data.firstLogin === 1) {
-            // Redirect to store dashboard which will show the popup
           setShowPopup(true);
           }
-          // Redirect to store dashboard which will show the popup
           navigate("/store-dashboard");
         }  
         else if (data.role === "Customer") {
-          // Normal redirect for existing users
           navigate("/customer-dashboard");
         }else if (data.role === "Store Administrator") {
-          // Normal redirect for existing users
           navigate("/admin-dashboard");
         }
         else{
@@ -95,7 +87,6 @@ export default function SignIn() {
           Sign In
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div>
             <label className="block text-black mb-1">Email</label>
             <input
@@ -113,7 +104,6 @@ export default function SignIn() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-black mb-1">Password</label>
             <input
@@ -131,7 +121,6 @@ export default function SignIn() {
             )}
           </div>
 
-          {/* Sign In Button */}
           <button
             type="submit"
             className="w-full bg-black text-white p-2 rounded-lg hover:bg-white hover:text-black transition duration-200 shadow-md font-semibold"
@@ -139,7 +128,6 @@ export default function SignIn() {
             Sign In
           </button>
 
-          {/* Redirect to Sign Up */}
           <p className="text-black text-center mt-4">
             Don't have an account?{" "}
             <button
